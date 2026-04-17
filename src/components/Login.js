@@ -1,12 +1,16 @@
-// src/components/Login.jsx
+// src/components/Login.js
 
 import React, { useState } from "react";
+import axios from "axios";
 
 function Login() {
   const [form, setForm] = useState({
     username: "",
     password: "",
   });
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setForm({
@@ -15,10 +19,37 @@ function Login() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login Data:", form);
-    // later: call your backend API here
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await axios.post(
+        "https://projectbackend-production-378d.up.railway.app/login",
+        form
+      );
+
+      console.log("✅ Login Success:", response.data);
+
+      // Example: store token if backend returns one
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+      }
+
+      alert("Login successful!");
+
+    } catch (err) {
+      console.error("❌ Login Error:", err);
+
+      if (err.response) {
+        setError(err.response.data.message || "Invalid credentials");
+      } else {
+        setError("Server not reachable");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -26,7 +57,7 @@ function Login() {
       <div style={styles.card}>
         <h2 style={styles.title}>Login</h2>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleLoginSubmit}>
           <input
             type="text"
             name="username"
@@ -45,8 +76,10 @@ function Login() {
             style={styles.input}
           />
 
-          <button type="submit" style={styles.button}>
-            Login
+          {error && <p style={styles.error}>{error}</p>}
+
+          <button type="submit" style={styles.button} disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
       </div>
@@ -90,6 +123,11 @@ const styles = {
     borderRadius: "5px",
     fontSize: "16px",
     cursor: "pointer",
+  },
+  error: {
+    color: "red",
+    marginBottom: "10px",
+    fontSize: "14px",
   },
 };
 
