@@ -1,7 +1,6 @@
 // src/components/Login.js
 
 import React, { useState } from "react";
-import axios from "axios";
 
 function Login() {
   const [form, setForm] = useState({
@@ -25,28 +24,34 @@ function Login() {
     setError("");
 
     try {
-      const response = await axios.post(
+      const response = await fetch(
         "https://projectbackend-production-378d.up.railway.app/login",
-        form
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(form),
+        }
       );
 
-      console.log("✅ Login Success:", response.data);
+      const data = await response.json();
 
-      // Example: store token if backend returns one
-      if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      console.log("✅ Login Success:", data);
+
+      if (data.token) {
+        localStorage.setItem("token", data.token);
       }
 
       alert("Login successful!");
 
     } catch (err) {
-      console.error("❌ Login Error:", err);
-
-      if (err.response) {
-        setError(err.response.data.message || "Invalid credentials");
-      } else {
-        setError("Server not reachable");
-      }
+      console.error("❌ Error:", err.message);
+      setError(err.message || "Server error");
     } finally {
       setLoading(false);
     }
@@ -127,7 +132,6 @@ const styles = {
   error: {
     color: "red",
     marginBottom: "10px",
-    fontSize: "14px",
   },
 };
 
