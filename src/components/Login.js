@@ -2,89 +2,108 @@
 
 import React, { useState } from "react";
 
+const API_BASE_URL = "https://projectbackend-production-378d.up.railway.app";
+
 function Login() {
-  const [form, setForm] = useState({
+  const [credentials, setCredentials] = useState({
     username: "",
     password: "",
   });
 
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [uiState, setUiState] = useState({
+    loading: false,
+    error: "",
+  });
 
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+
+    setCredentials((prevCredentials) => ({
+      ...prevCredentials,
+      [name]: value,
+    }));
   };
 
-  const handleLoginSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+  const handleLoginSubmit = async (event) => {
+    event.preventDefault();
+
+    setUiState({ loading: true, error: "" });
 
     try {
-      const response = await fetch(
-        "https://projectbackend-production-378d.up.railway.app/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(form),
-        }
-      );
+      const loginResponse = await fetch(`${API_BASE_URL}/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(credentials),
+      });
 
-      const data = await response.json();
+      const loginData = await loginResponse.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
+      if (!loginResponse.ok) {
+        throw new Error(loginData?.message || "Invalid username or password");
       }
 
-      console.log("✅ Login Success:", data);
-
-      if (data.token) {
-        localStorage.setItem("token", data.token);
+      // Store token if provided
+      if (loginData?.token) {
+        localStorage.setItem("auth_token", loginData.token);
       }
+
+      console.log("Login successful:", loginData);
 
       alert("Login successful!");
 
-    } catch (err) {
-      console.error("❌ Error:", err.message);
-      setError(err.message || "Server error");
-    } finally {
-      setLoading(false);
+      // 🔥 future improvement:
+      // window.location.href = "/dashboard";
+
+    } catch (loginError) {
+      console.error("Login failed:", loginError);
+      setUiState({
+        loading: false,
+        error: loginError.message || "Something went wrong",
+      });
+      return;
     }
+
+    setUiState({ loading: false, error: "" });
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>Login</h2>
+    <div style={styles.pageContainer}>
+      <div style={styles.loginCard}>
+        <h2 style={styles.heading}>Login</h2>
 
         <form onSubmit={handleLoginSubmit}>
           <input
             type="text"
             name="username"
             placeholder="Username"
-            value={form.username}
-            onChange={handleChange}
-            style={styles.input}
+            value={credentials.username}
+            onChange={handleInputChange}
+            style={styles.inputField}
+            required
           />
 
           <input
             type="password"
             name="password"
             placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            style={styles.input}
+            value={credentials.password}
+            onChange={handleInputChange}
+            style={styles.inputField}
+            required
           />
 
-          {error && <p style={styles.error}>{error}</p>}
+          {uiState.error && (
+            <p style={styles.errorText}>{uiState.error}</p>
+          )}
 
-          <button type="submit" style={styles.button} disabled={loading}>
-            {loading ? "Logging in..." : "Login"}
+          <button
+            type="submit"
+            style={styles.submitButton}
+            disabled={uiState.loading}
+          >
+            {uiState.loading ? "Logging in..." : "Login"}
           </button>
         </form>
       </div>
@@ -93,45 +112,46 @@ function Login() {
 }
 
 const styles = {
-  container: {
+  pageContainer: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     height: "100vh",
-    backgroundColor: "#f2f2f2",
+    backgroundColor: "#f4f6f8",
   },
-  card: {
-    width: "400px",
-    padding: "30px",
+  loginCard: {
+    width: "380px",
+    padding: "32px",
     backgroundColor: "#ffffff",
-    borderRadius: "10px",
-    boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
+    borderRadius: "12px",
+    boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
   },
-  title: {
+  heading: {
     textAlign: "center",
-    marginBottom: "20px",
+    marginBottom: "24px",
   },
-  input: {
+  inputField: {
     width: "100%",
     padding: "12px",
-    marginBottom: "15px",
-    borderRadius: "5px",
-    border: "1px solid #ccc",
-    fontSize: "16px",
+    marginBottom: "14px",
+    borderRadius: "6px",
+    border: "1px solid #dcdcdc",
+    fontSize: "15px",
   },
-  button: {
+  submitButton: {
     width: "100%",
     padding: "12px",
-    backgroundColor: "#1e88e5",
-    color: "#fff",
+    backgroundColor: "#1976d2",
+    color: "#ffffff",
     border: "none",
-    borderRadius: "5px",
-    fontSize: "16px",
+    borderRadius: "6px",
+    fontSize: "15px",
     cursor: "pointer",
   },
-  error: {
-    color: "red",
-    marginBottom: "10px",
+  errorText: {
+    color: "#d32f2f",
+    marginBottom: "12px",
+    fontSize: "14px",
   },
 };
 
