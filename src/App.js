@@ -1,8 +1,8 @@
 import React from "react";
-import LoginImageDisplay from "./components/LoginImage";
+import Login from "./components/Login";
 
 function App() {
-  return <LoginImageDisplay />;
+  return <Login />;
 }
 
 export default App;
